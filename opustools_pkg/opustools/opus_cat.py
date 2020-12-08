@@ -93,23 +93,20 @@ class OpusCat:
         self.file_name = file_name
         self.plain = plain
 
-        self.preprocess = 'xml'
-        if print_annotations:
-            self.preprocess = 'parsed'
+        self.preprocess = 'parsed' if print_annotations else 'xml'
 
-        self.openFiles(
-            os.path.join(download_dir, directory+'_'+release+'_xml_'+
-                language+'.zip'),
-            os.path.join(root_directory, directory, 'latest', 'xml',
-                language+'.zip'))
+        self.localfile = os.path.join(download_dir, directory+'_'+release+'_xml_'+
+                language+'.zip')
+        self.defaultpath = os.path.join(root_directory, directory, 'latest', 'xml',
+                language+'.zip')
 
-    def openFiles(self, localfile, defaultpath):
+    def openFile(self):
         """Open zip file."""
         try:
             try:
-                self.lzip = zipfile.ZipFile(localfile)
+                return zipfile.ZipFile(self.localfile)
             except FileNotFoundError:
-                self.lzip = zipfile.ZipFile(defaultpath)
+                return zipfile.ZipFile(self.defaultpath)
         except FileNotFoundError:
             print('\nRequested file not found. The following files are '
                 'availble for downloading:\n')
@@ -125,11 +122,11 @@ class OpusCat:
             og = OpusGet(**arguments)
             og.get_files()
             try:
-                self.lzip = zipfile.ZipFile(localfile)
+                return zipfile.ZipFile(self.localfile)
             except FileNotFoundError:
                 print('No file found')
 
-    def printFile(self, f, n):
+    def printFile(self, f):
         """Print sentences from a document."""
         if self.maximum == 0:
             return
@@ -138,7 +135,7 @@ class OpusCat:
             spar = SentenceParser(f, self.preprocess,
                 self.set_attribute, self.change_annotation_delimiter)
             spar.store_sentences({})
-            print('\n# '+n+'\n')
+            print('\n# '+f.name+'\n') # move this outside this function
             for sid, attrs in spar.sentences.items():
                 if self.no_ids:
                     print(attrs[0])
@@ -158,16 +155,12 @@ class OpusCat:
 
     def printSentences(self):
         """Print sentences from documents in a zip file."""
-        try:
+        with self.openFile() as z:
             if self.file_name:
-                with self.lzip.open(self.file_name, 'r') as f:
-                    self.printFile(f, self.file_name)
+                with z.open(self.file_name, 'r') as f:
+                    self.printFile(f)
             else:
-                for n in self.lzip.namelist():
-                    if n[-4:] == '.xml':
-                        with self.lzip.open(n, 'r') as f:
-                            self.printFile(f, n)
-        except AttributeError as e:
-            print('Necessary files not found.')
-
-
+                for name in z.namelist():
+                    if name.endswith('.xml'):
+                        with z.open(name, 'r') as f:
+                            self.printFile(f)

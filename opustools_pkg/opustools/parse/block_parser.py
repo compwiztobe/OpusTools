@@ -31,6 +31,13 @@ class Block:
             return '<{tag_content}>{data}</{name}>'.format(
                     tag_content=tag_content, data=self.data, name=self.name)
 
+    def tag_in_parents(self, tag):
+        """Check if given tag is in block's ancestors and return the matching block"""
+        if self.name == tag:
+            return block
+        elif self.parent:
+            return self.parent.tag_in_parents(tag)
+
     def __str__(self):
         parent_name = None
         if self.parent:
@@ -52,23 +59,23 @@ class BlockParser:
 
         self.document = document
         self.data_tag = data_tag
-        self.block = Block(name='root')
+        self.current_block = Block(name='root')
         self.completeBlocks = []
 
         def start_element(name, attrs):
             """Update current block"""
-            sub_block = Block(parent=self.block, name=name, attributes=attrs)
-            self.block = sub_block
+            sub_block = Block(parent=self.current_block, name=name, attributes=attrs)
+            self.current_block = sub_block
 
         def end_element(name):
             """Update complete blocks, and move up one level on block tree"""
-            self.completeBlocks.append(self.block)
-            self.block = self.block.parent
+            self.completeBlocks.append(self.current_block)
+            self.current_block = self.current_block.parent
 
         def char_data(data):
             """Update current block's character data"""
-            if self.block.name == self.data_tag:
-                self.block.data += data
+            if self.current_block.name == self.data_tag:
+                self.current_block.data += data
 
         self.p = xml.parsers.expat.ParserCreate()
 
@@ -81,11 +88,14 @@ class BlockParser:
         try:
             self.p.Parse(line)
         except xml.parsers.expat.ExpatError as e:
-            self.close_document()
             raise BlockParserError(
                 "Document '{document}' could not be parsed: "
                 "{error}".format(document=self.document.name, error=e.args[0]))
 
+    # is this really necessary?
+    # if the underlying document object is something that needs closing
+    # then the code calling this BlockParser (or SentenceParser)
+    # should already be handling that (with a with block for example)
     def close_document(self):
         self.document.close()
 
@@ -100,12 +110,3 @@ class BlockParser:
                 ret_blocks = self.completeBlocks
                 self.completeBlocks = []
                 return ret_blocks
-
-    @staticmethod
-    def tag_in_parents(tag, block):
-        """Check if given tag is in blocks parents"""
-        while block:
-            if block.name == tag:
-                return block
-            block = block.parent
-        return None
