@@ -337,6 +337,13 @@ def check_lang_conf_type(lang_filters):
     else:
         return no_check, False
 
+def unzip(sentence_dict, sids):
+    if sids:
+        sentences, attrs = zip(*(sentence_dict[sid] for sid in sids))
+        return sentences, attrs
+    else:
+        return [],[]
+
 def pair_format_type(wmode, switch_langs, check_filters, check_lang,
         format_sentences):
     """Select function for formatting sentence pairs"""
@@ -347,8 +354,8 @@ def pair_format_type(wmode, switch_langs, check_filters, check_lang,
         src_ids = str_src_ids.split()
         trg_ids = str_trg_ids.split()
 
-        src_sentences, src_attrs = args[1].read_sentence(src_ids)
-        trg_sentences, trg_attrs = args[2].read_sentence(trg_ids)
+        src_sentences, src_attrs = unzip(args[1].sentences, src_ids)
+        trg_sentences, trg_attrs = unzip(args[2].sentences, trg_ids)
 
         if check_filters(src_attrs, trg_attrs):
             return -1, -1
@@ -362,8 +369,8 @@ def pair_format_type(wmode, switch_langs, check_filters, check_lang,
         src_ids = str_src_ids.split()
         trg_ids = str_trg_ids.split()
 
-        src_sentences, src_attrs = args[1].read_sentence(src_ids)
-        trg_sentences, trg_attrs = args[2].read_sentence(trg_ids)
+        src_sentences, src_attrs = unzip(args[1].sentences, src_ids)
+        trg_sentences, trg_attrs = unzip(args[2].sentences, trg_ids)
 
         if check_filters(src_attrs, trg_attrs):
             return -1, -1
@@ -377,8 +384,8 @@ def pair_format_type(wmode, switch_langs, check_filters, check_lang,
         src_ids = str_src_ids.split()
         trg_ids = str_trg_ids.split()
 
-        src_sentences, src_attrs = args[1].read_sentence(src_ids)
-        trg_sentences, trg_attrs = args[2].read_sentence(trg_ids)
+        src_sentences, src_attrs = unzip(args[1].sentences, src_ids)
+        trg_sentences, trg_attrs = unzip(args[2].sentences, trg_ids)
 
         if check_filters(src_attrs, trg_attrs):
             return -1, -1

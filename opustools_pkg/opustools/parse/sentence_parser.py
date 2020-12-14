@@ -74,17 +74,3 @@ class SentenceParser:
             return self.delimiter.join(block.attributes[a] for a in sorted(block.attributes))
         else:
             return self.delimiter.join(block.attributes[a] for a in self.anno_attrs if a in block.attributes)
-
-    # unused outside of test cases - not useful functionality - remove
-    def get_sentence(self, sid):
-        """Return a sentence based on given sentence id."""
-        return self.sentences.get(sid, ('', {}))
-
-    # unused outside of test cases - not useful functionality - remove
-    def read_sentence(self, ids):
-        """Return a sequence of sentences based on given sentence ids."""
-        if len(ids) == 0 or ids[0] == '':
-            return [], []
-
-        return tuple(zip(*[self.get_sentence(sid) for sid in ids]))
-

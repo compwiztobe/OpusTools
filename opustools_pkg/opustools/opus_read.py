@@ -209,12 +209,9 @@ class OpusRead:
 
         total = 0
         stop = False
-        while True:
-            link_attrs, src_set, trg_set, src_doc_name, trg_doc_name = \
-                self.alignmentParser.collect_links()
-
+        for link_attrs, src_set, trg_set, src_doc_name, trg_doc_name in self.alignmentParser.collect_links():
             if not src_doc_name:
-                break
+                break # might not be necessary with the for loop now
 
             if self.skip_doc(src_doc_name):
                 continue
@@ -232,11 +229,11 @@ class OpusRead:
                     src_parser = SentenceParser(src_doc,
                             preprocessing=self.preprocess, anno_attrs=self.src_annot,
                             preserve=self.preserve, delimiter=self.annot_delimiter)
-                    src_parser.store_sentences(src_set)
+                    src_parser.sentences = {sid: attrs for sid, attrs in src_parser.sentences(src_set)}
                     trg_parser = SentenceParser(trg_doc,
                             preprocessing=self.preprocess, anno_attrs=self.trg_annot,
                             preserve=self.preserve, delimiter=self.annot_delimiter)
-                    trg_parser.store_sentences(trg_set)
+                    trg_parser.sentences = {sid: attrs for sid, attrs in trg_parser.sentences(trg_set)}
                 except SentenceParserError as e:
                     print('\n'+e.message+'\nContinuing from next sentence file pair.')
                     continue

@@ -95,19 +95,16 @@ class AlignmentParser:
         src_doc, trg_doc = None, None
 
         try:
-            blocks = self.bp.get_complete_blocks()
-            while blocks:
-                for block in blocks:
-                    if block.name == 'link':
-                        self.add_link(block, attrs, src_id_set, trg_id_set)
-                    elif block.name == 'linkGrp':
-                        src_doc = block.attributes['fromDoc']
-                        trg_doc = block.attributes['toDoc']
-                        return attrs, src_id_set, trg_id_set, src_doc, trg_doc
-                blocks = self.bp.get_complete_blocks()
+            for block in self.bp.get_complete_blocks():
+                if block.name == 'link':
+                    self.add_link(block, attrs, src_id_set, trg_id_set)
+                elif block.name == 'linkGrp':
+                    src_doc = block.attributes['fromDoc']
+                    trg_doc = block.attributes['toDoc']
+                    yield attrs, src_id_set, trg_id_set, src_doc, trg_doc
+                    attrs = []
+                    src_id_set, trg_id_set = set(), set()
+                    src_doc, trg_doc = None, None
         except BlockParserError as e:
             raise AlignmentParserError(
                 'Error while parsing alignment file: {error}'.format(error=e.args[0]))
-
-        return attrs, src_id_set, trg_id_set, src_doc, trg_doc
-

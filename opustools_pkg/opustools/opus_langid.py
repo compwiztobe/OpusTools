@@ -11,20 +11,6 @@ identifier = LanguageIdentifier.from_modelstring(model, norm_probs=True)
 
 from .parse.sentence_parser import SentenceParser
 
-def xml_parse(bp, block, sentence, sentences, id_set):
-    if block.name == 's':
-        sid = block.attributes['id']
-        sentence.append(block.data.strip())
-        sentence = ' '.join(sentence)
-        sentences[sid] = (sentence, block.attributes)
-        sentence = []
-    elif block.name == 'w':
-        s_parent = bp.tag_in_parents('s', block)
-        if s_parent:
-            data = block.data.strip()
-            sentence.append(data)
-    return sentence
-
 class LanguageIdAdder(SentenceParser):
 
     def __init__(self, document, suppress, iszip, preprocessing):
@@ -35,11 +21,9 @@ class LanguageIdAdder(SentenceParser):
         iszip -- Parse zip file (bytes) instead of plain text
         """
 
-        super().__init__(document, preprocessing, '', '', None)
+        super().__init__(document, preprocessing, '', '')
         self.iszip = iszip
         self.suppress = suppress
-
-        self.parse_block = xml_parse
 
     def detectLanguage(self, sentence, sid):
         """Assign language ids and scores to a sentence."""
@@ -77,7 +61,7 @@ class LanguageIdAdder(SentenceParser):
                 m = re.search(' id\="(.*?)"', line)
                 if m:
                     sid = m.group(1)
-                    sentence = self.get_sentence(sid)[0]
+                    sentence = self.sentences[sid][0]
                     cldlan, cldconf, lilan, liconf = self.detectLanguage(sentence, sid)
                     new_tag_start = ('<s cld2="{}" cld2conf="{}" langid="{}" '
                         'langidconf="{}"'.format(cldlan, cldconf, lilan, liconf))
@@ -120,7 +104,7 @@ class OpusLangid:
                             with zip_arc.open(filename.filename) as infile:
                                 sparser = LanguageIdAdder(infile,
                                     self.suppress_errors, True, self.preprocess)
-                                sparser.store_sentences({})
+                                sparser.sentences = {sid: attrs for sid, attrs in sparser.sentences()}
                             with zip_arc.open(filename.filename) as infile:
                                 with open(tempxml[1], 'wb') as outfile:
                                     sparser.addIds(infile, outfile)
@@ -136,7 +120,7 @@ class OpusLangid:
                 with open(self.file_path, 'r') as infile:
                     sparser = LanguageIdAdder(infile,
                             self.suppress_errors, False, self.preprocess)
-                    sparser.store_sentences({})
+                    sparser.sentences = {sid: attrs for sid, attrs in sparser.sentences()}
                 with open(self.file_path, 'r') as infile:
                     sparser.addIds(infile, outfile)
 
