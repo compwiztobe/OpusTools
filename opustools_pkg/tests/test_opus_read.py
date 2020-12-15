@@ -54,8 +54,10 @@ class TestOpusRead(unittest.TestCase):
     def setUpClass(self):
         if ('OPUSREAD_TEST_TEMPDIR' in os.environ.keys() and
             os.path.exists(os.environ['OPUSREAD_TEST_TEMPDIR'])):
+                self.save_temp = True
                 self.tempdir1 = os.environ['OPUSREAD_TEST_TEMPDIR']
         else:
+            self.save_temp = False
             self.tempdir1 = tempfile.mkdtemp()
             os.mkdir(os.path.join(self.tempdir1, 'test_files'))
 
@@ -180,8 +182,10 @@ class TestOpusRead(unittest.TestCase):
 
         if ('OPUSREAD_TEST_ROOTDIR' in os.environ.keys() and
             os.path.exists(os.environ['OPUSREAD_TEST_ROOTDIR'])):
+            self.save_root = True
             self.root_directory = os.environ['OPUSREAD_TEST_ROOTDIR']
         else:
+            self.save_root = False
             self.root_directory = tempfile.mkdtemp()
 
             os.makedirs(os.path.join(self.root_directory, 'RF', 'latest',
@@ -259,8 +263,14 @@ class TestOpusRead(unittest.TestCase):
             print('\nTEMPDIR:', self.tempdir1)
             print('ROOTDIR:', self.root_directory)
         else:
-            shutil.rmtree(self.tempdir1)
-            shutil.rmtree(self.root_directory)
+            if self.save_temp:
+                print('\nTEMPDIR:', self.tempdir1)
+            else:
+                shutil.rmtree(self.tempdir1)
+            if self.save_root:
+                print('\nROOTDIR:', self.root_directory)
+            else:
+                shutil.rmtree(self.root_directory)
 
     def tearDown(self):
         pass
