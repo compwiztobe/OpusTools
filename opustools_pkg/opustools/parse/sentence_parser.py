@@ -15,19 +15,18 @@ def parse_type(preprocess, preserve, get_annotations):
     def parsed_preserve(blocks):
         for block in blocks:
                 sid = block.attributes['id']
+                words = []
+                for child in block.children:
+                    if child.name == 'w' and preprocess != 'raw':
+                        word = child.data.strip()
+                        if preprocess == 'parsed':
+                            word += get_annotations(child)
+                        words.append(word)
+                    if child.name == 'time' and preserve:
+                        words.append(child.get_raw_tag())
                 if preprocess == 'raw':
-                    sentence = block.data.strip()
-                else:
-                    words = []
-                    for child in block.children:
-                        if child.name == 'w':
-                            word = child.data.strip()
-                            if preprocess == 'parsed':
-                                word += get_annotations(child)
-                            words.append(word)
-                        elif child.name == 'time' and preserve:
-                            words.append(child.get_raw_tag())
-                    sentence = ' '.join(words)
+                    words.append(block.data.strip())
+                sentence = ' '.join(words)
                 yield (sid, (sentence, block.attributes))
 
     return parsed_preserve
