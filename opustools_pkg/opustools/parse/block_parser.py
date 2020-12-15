@@ -107,6 +107,5 @@ class BlockParser:
         for line in self.document:
             self.parse_line(line)
             if len(self.completeBlocks) > 0:
-                ret_blocks = self.completeBlocks
+                yield from self.completeBlocks
                 self.completeBlocks = []
-                return ret_blocks

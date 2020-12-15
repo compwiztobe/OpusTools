@@ -82,9 +82,8 @@ class OpusCat:
         if self.plain:
             spar = SentenceParser(f, self.preprocess,
                 self.set_attribute, self.change_annotation_delimiter)
-            spar.store_sentences({})
             print('\n# '+f.name+'\n') # move this outside this function
-            for sid, attrs in spar.sentences.items():
+            for sid, attrs in spar.sentences():
                 if self.no_ids:
                     print(attrs[0])
                 else:
@@ -95,20 +94,28 @@ class OpusCat:
         else:
             for line in f:
                 line = line.decode('utf-8')
+                #yield line
                 print(line, end='')
                 if '</s>' in line:
                     self.maximum -= 1
                     if self.maximum == 0:
                         break
 
+    # def printSentences(self):
+    #     # for line in self.sentences():
+    #     #     pass
+    #     self.sentences()
+
     def printSentences(self):
         """Print sentences from documents in a zip file."""
         with self.openFile() as z:
             if self.file_name:
                 with z.open(self.file_name, 'r') as f:
+                    #yield from 
                     self.printFile(f)
             else:
                 for name in z.namelist():
                     if name.endswith('.xml'):
                         with z.open(name, 'r') as f:
+                            #yield from 
                             self.printFile(f)

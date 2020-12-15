@@ -12,26 +12,27 @@ class SentenceParserError(Exception):
 
 def parse_type(preprocess, preserve, get_annotations):
     """Select function to be used for parsing"""
-    def parsed_preserve(block, sentence, sentences, id_set):
-        if block.name == 's' and (not id_set or block.attributes['id'] in id_set):
-            sid = block.attributes['id']
-            if preprocess == 'raw':
-                sentence.append(block.data.strip())
-            sentence = ' '.join(sentence)
-            sentences[sid] = (sentence, block.attributes)
-            sentence = []
-        elif block.name == 'w' and preprocess != 'raw':
-            s_parent = block.tag_in_parents('s')
-            if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
-                data = block.data.strip()
-                if preprocess == 'parsed':
-                    data += get_annotations(block)
-                sentence.append(data)
-        elif block.name == 'time' and preserve:
-            s_parent = block.tag_in_parents('s')
-            if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
-                sentence.append(block.get_raw_tag())
-        return sentence
+    def parsed_preserve(blocks, id_set):
+        sentence = []
+        for block in blocks:
+            if block.name == 's' and (not id_set or block.attributes['id'] in id_set):
+                sid = block.attributes['id']
+                if preprocess == 'raw':
+                    sentence.append(block.data.strip())
+                sentence = ' '.join(sentence)
+                yield (sid, (sentence, block.attributes))
+                sentence = []
+            elif block.name == 'w' and preprocess != 'raw':
+                s_parent = block.tag_in_parents('s')
+                if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
+                    data = block.data.strip()
+                    if preprocess == 'parsed':
+                        data += get_annotations(block)
+                    sentence.append(data)
+            elif block.name == 'time' and preserve:
+                s_parent = block.tag_in_parents('s')
+                if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
+                    sentence.append(block.get_raw_tag())
 
     return parsed_preserve
 
@@ -54,26 +55,19 @@ class SentenceParser:
         self.delimiter = delimiter
         self.anno_attrs = anno_attrs
 
-        self.parse_block = parse_type(preprocessing, preserve, self.get_annotations)
-
-        self.sentences = {}
-        self.done = False
+        self.parse_blocks = parse_type(preprocessing, preserve, self.get_annotations)
 
         self.data_tag = 's' if preprocessing == 'raw' else 'w'
 
-    def store_sentences(self, id_set=None):
+    # removed store functionality in favor of a sentence iterator, possibly filtered by id_set
+    # possibly with post-processing for the different annotations etc. (although that should probably go outside)
+    # one thing that could maybe go in here the raw flag, to parse out individual words, or return entire sentence xml unparsed
+    def sentences(self, id_set=None):
         """Read document and store sentences in a dictionary."""
         bp = BlockParser(self.document, data_tag=self.data_tag)
-        sentence = []
-        sid = None
         try:
-            blocks = bp.get_complete_blocks()
-            while blocks:
-                for block in blocks:
-                    sentence = self.parse_block(
-                            bp, block, sentence, self.sentences, id_set)
-                blocks = bp.get_complete_blocks()
-            bp.close_document()
+            for sid, attrs in self.parse_blocks(bp.get_complete_blocks(), id_set):
+                yield sid, attrs
         except BlockParserError as e:
             raise SentenceParserError(
                 'Error while parsing sentence file {file}: {error}'.format(file=self.document.name, error=e.args[0]))
