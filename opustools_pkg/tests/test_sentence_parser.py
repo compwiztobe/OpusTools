@@ -131,15 +131,15 @@ class TestSentenceParser(unittest.TestCase):
 
     def test_get_annotations(self):
         with file_open(self.books_path) as f1, file_open(self.books_path) as f2:
-            bp = BlockParser(f1)
+            bp = BlockParser(f1, data_tag='w')
             sp = SentenceParser(f2)
             blocks = list(bp.get_complete_blocks())
-            self.assertEqual(sp.get_annotations(blocks[19]), '|NN|w1.1|source|NN|NN')
+            self.assertEqual(sp.get_annotations(blocks[17]), '|NN|w1.1|source|NN|NN')
         with file_open(self.books_path) as f1, file_open(self.books_path) as f2:
-            bp = BlockParser(f1)
+            bp = BlockParser(f1, data_tag='w')
             sp = SentenceParser(f2, anno_attrs=['pos'])
             blocks = list(bp.get_complete_blocks())
-            self.assertEqual(sp.get_annotations(blocks[19]), '|NN')
+            self.assertEqual(sp.get_annotations(blocks[17]), '|NN')
 
     def test_get_sentence(self):
         with file_open(self.books_raw_path) as f:

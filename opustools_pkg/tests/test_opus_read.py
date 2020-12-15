@@ -1789,7 +1789,7 @@ class TestOpusRead(unittest.TestCase):
                 '(src)="s1">test_en1 test_en2\n'
                 '(trg)="s1">test_fi1 test_fi2\n'
                 '================================\n\n'
-                'Error while parsing sentence file: Document '
+                'Error while parsing sentence file test_files/invalid_en: Document '
                 "'test_files/invalid_en' could not be parsed: mismatched "
                 'tag: line 8, column 3\n'
                 'Continuing from next sentence file pair.\n\n'
