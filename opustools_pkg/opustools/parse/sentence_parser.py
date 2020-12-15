@@ -36,7 +36,7 @@ def parse_type(preprocess, preserve, get_annotations):
 class SentenceParser:
 
     def __init__(self, document, preprocessing=None, anno_attrs=['all_attrs'],
-            delimiter='|', preserve=None):
+            delimiter='|', preserve=False):
         """Parse xml sentence files that have sentence ids in any order.
 
         Arguments:
