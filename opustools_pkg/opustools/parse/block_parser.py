@@ -13,13 +13,13 @@ class BlockParserError(Exception):
 
 class Block:
 
-    def __init__(self, parent=None, name=None, data='', attributes=None, children=[]):
+    def __init__(self, parent=None, name=None, data='', attributes=None, children=None):
         """Xml block instance held in memory by BlockParser"""
         self.parent = parent
         self.name = name
         self.data = data
         self.attributes = attributes
-        self.children = children
+        self.children = children if children else []
 
     def get_raw_tag(self):
         astrings = ['{k}="{v}"'.format(k=k, v=v)
