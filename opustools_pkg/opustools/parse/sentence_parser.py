@@ -71,6 +71,6 @@ class SentenceParser:
 
     def get_annotations(self, block):
         if 'all_attrs' in self.anno_attrs:
-            return self.delimiter.join(block.attributes[a] for a in sorted(block.attributes))
+            return self.delimiter + self.delimiter.join(block.attributes[a] for a in sorted(block.attributes))
         else:
-            return self.delimiter.join(block.attributes[a] for a in self.anno_attrs if a in block.attributes)
+            return self.delimiter + self.delimiter.join(block.attributes[a] for a in self.anno_attrs if a in block.attributes)

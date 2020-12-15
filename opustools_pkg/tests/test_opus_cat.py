@@ -132,13 +132,11 @@ class TestOpusCat(unittest.TestCase):
         old_stdout = sys.stdout
         printout = io.StringIO()
         sys.stdout = printout
-        OpusCat.openFiles(
-            OpusCat(directory='RF', language='en', download_dir=self.tempdir1),
-            os.path.join(self.tempdir1, 'RF_latest_xml_en.zip'), '')
+        opus_cat = OpusCat(directory='RF', language='en', download_dir=self.tempdir1)
+        opus_cat.defaultpath = ''
+        opus_cat.openFile()
         os.remove(os.path.join(self.tempdir1, 'RF_latest_xml_en.zip'))
-        OpusCat.openFiles(
-            OpusCat(directory='RF', language='en', download_dir=self.tempdir1),
-            os.path.join(self.tempdir1, 'RF_latest_xml_en.zip'), '')
+        opus_cat.openFile()
         sys.stdout = old_stdout
         self.assertTrue('No file found' in printout.getvalue())
 

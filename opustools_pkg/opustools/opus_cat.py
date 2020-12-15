@@ -5,6 +5,16 @@ import os
 from .opus_get import OpusGet
 from .parse.sentence_parser import SentenceParser
 
+class OpusFileNotFoundError(Exception):
+
+    def __init__(self, message):
+        """Raise error when sentence parsing fails.
+
+        Arguments:
+        message -- Error message to be printed
+        """
+        self.message = message
+
 class OpusCat:
 
     def __init__(self, directory=None, language=None, no_ids=False,
@@ -108,14 +118,17 @@ class OpusCat:
 
     def printSentences(self):
         """Print sentences from documents in a zip file."""
-        with self.openFile() as z:
-            if self.file_name:
-                with z.open(self.file_name, 'r') as f:
-                    #yield from 
-                    self.printFile(f)
-            else:
-                for name in z.namelist():
-                    if name.endswith('.xml'):
-                        with z.open(name, 'r') as f:
-                            #yield from 
-                            self.printFile(f)
+        try:
+            with self.openFile() as z:
+                if self.file_name:
+                    with z.open(self.file_name, 'r') as f:
+                        #yield from
+                        self.printFile(f)
+                else:
+                    for name in z.namelist():
+                        if name.endswith('.xml'):
+                            with z.open(name, 'r') as f:
+                                #yield from
+                                self.printFile(f)
+        except AttributeError:
+            print('Necessary files not found.')
