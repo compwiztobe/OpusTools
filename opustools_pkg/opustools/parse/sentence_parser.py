@@ -16,7 +16,7 @@ def parse_type(preprocess, preserve, get_annotations):
         for block in blocks:
                 sid = block.attributes['id']
                 words = []
-                for child in block.children:
+                for child in block.all_children():
                     if child.name == 'w' and preprocess != 'raw':
                         word = child.data.strip()
                         if preprocess == 'parsed':

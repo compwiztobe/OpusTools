@@ -42,6 +42,11 @@ class Block:
                 attributes=self.attributes, parent=parent_name,
                 children=', '.join(child.name for child in self.children)))
 
+    def all_children(self):
+        for child in self.children:
+            yield child
+            yield from child.all_children()
+
 class BlockParser:
 
     def __init__(self, document, data_tag='root'):
