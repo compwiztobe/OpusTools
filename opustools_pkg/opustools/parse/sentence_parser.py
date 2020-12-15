@@ -24,7 +24,7 @@ def parse_type(preprocess, preserve, get_annotations):
 
     def parse_w_parsed(block, sentence, id_set):
         s_parent = block.tag_in_parents('s')
-        if s_parent and s_parent.attributes['id'] in id_set:
+        if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
             data = block.data.strip()
             if preprocess == 'parsed':
                 data += get_annotations(block)
@@ -38,11 +38,11 @@ def parse_type(preprocess, preserve, get_annotations):
         return sentence
 
     def parsed_preserve(block, sentence, sentences, id_set):
-        if block.name == 's' and block.attributes['id'] in id_set:
+        if block.name == 's' and (not id_set or block.attributes['id'] in id_set):
             sentence = parse_s_raw(block, sentence, sentences)
         elif block.name == 'w' and preprocess != 'raw':
             sentence = parse_w_parsed(block, sentence, id_set)
-        elif block.name == 'time':
+        elif block.name == 'time' and preserve:
             sentence = parse_time(block, sentence, id_set)
         return sentence
 
@@ -74,7 +74,7 @@ class SentenceParser:
 
         self.data_tag = 's' if preprocessing == 'raw' else 'w'
 
-    def store_sentences(self, id_set):
+    def store_sentences(self, id_set=None):
         """Read document and store sentences in a dictionary."""
         bp = BlockParser(self.document, data_tag=self.data_tag)
         sentence = []

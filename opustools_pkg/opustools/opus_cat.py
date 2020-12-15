@@ -5,42 +5,6 @@ import os
 from .opus_get import OpusGet
 from .parse.sentence_parser import SentenceParser
 
-def parse_type(preprocessing, get_annotations):
-    def parsed_parse(block, sentence, sentences, id_set):
-        if block.name == 's': # the only difference from the default parser - no id_set check
-            sid = block.attributes['id']
-            sentence = ' '.join(sentence)
-            sentences[sid] = (sentence, block.attributes)
-            sentence = []
-        elif block.name == 'w':
-            s_parent = block.tag_in_parents('s')
-            if s_parent: # the only difference from the default parser - no id_set check
-                data = block.data.strip()
-                if preprocessing == 'parsed':
-                    data += get_annotations(block)
-                sentence.append(data)
-        return sentence
-
-    return parsed_parse
-
-class SentenceParser(SentenceParser):
-
-    def __init__(self, document, preprocessing, set_attribute,
-            change_annotation_delimiter):
-        """Read sentence from a xml document.
-
-        Arguments:
-        document -- Xml document
-        preprocessing -- Preprocessing type, xml or parsed
-        set_attribute -- Set annotation attributes to be printed
-        change_annotation_delimiter -- Change annotation delimiter
-        """
-
-        super().__init__(document, preprocessing, set_attribute,
-                change_annotation_delimiter, None)
-
-        self.parse_block = parse_type(preprocessing, self.get_annotations)
-
 class OpusCat:
 
     def __init__(self, directory=None, language=None, no_ids=False,
