@@ -12,10 +12,10 @@ class SentenceParserError(Exception):
 
 def parse_type(preprocess, preserve, get_annotations):
     """Select function to be used for parsing"""
-    def parsed_preserve(blocks, id_set):
+    def parsed_preserve(blocks):
         sentence = []
         for block in blocks:
-            if block.name == 's' and (not id_set or block.attributes['id'] in id_set):
+            if block.name == 's':
                 sid = block.attributes['id']
                 if preprocess == 'raw':
                     sentence.append(block.data.strip())
@@ -23,16 +23,12 @@ def parse_type(preprocess, preserve, get_annotations):
                 yield (sid, (sentence, block.attributes))
                 sentence = []
             elif block.name == 'w' and preprocess != 'raw':
-                s_parent = block.tag_in_parents('s')
-                if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
-                    data = block.data.strip()
-                    if preprocess == 'parsed':
-                        data += get_annotations(block)
-                    sentence.append(data)
+                data = block.data.strip()
+                if preprocess == 'parsed':
+                    data += get_annotations(block)
+                sentence.append(data)
             elif block.name == 'time' and preserve:
-                s_parent = block.tag_in_parents('s')
-                if s_parent and (not id_set or s_parent.attributes['id'] in id_set):
-                    sentence.append(block.get_raw_tag())
+                sentence.append(block.get_raw_tag())
 
     return parsed_preserve
 
@@ -66,8 +62,9 @@ class SentenceParser:
         """Read document and store sentences in a dictionary."""
         bp = BlockParser(self.document, data_tag=self.data_tag)
         try:
-            for sid, attrs in self.parse_blocks(bp.get_complete_blocks(), id_set):
-                yield sid, attrs
+            for sid, attrs in self.parse_blocks(bp.get_complete_blocks()):
+                if not id_set or sid in id_set:
+                    yield sid, attrs
         except BlockParserError as e:
             raise SentenceParserError(
                 'Error while parsing sentence file {file}: {error}'.format(file=self.document.name, error=e.args[0]))

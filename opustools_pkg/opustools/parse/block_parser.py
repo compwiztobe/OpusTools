@@ -31,13 +31,6 @@ class Block:
             return '<{tag_content}>{data}</{name}>'.format(
                     tag_content=tag_content, data=self.data, name=self.name)
 
-    def tag_in_parents(self, tag):
-        """Check if given tag is in block's ancestors and return the matching block"""
-        if self.name == tag:
-            return block
-        elif self.parent:
-            return self.parent.tag_in_parents(tag)
-
     def __str__(self):
         parent_name = None
         if self.parent:
