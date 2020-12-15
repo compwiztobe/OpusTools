@@ -6,38 +6,22 @@ from .opus_get import OpusGet
 from .parse.sentence_parser import SentenceParser
 
 def parse_type(preprocessing, get_annotations):
-    def xml_parse(bp, block, sentence, sentences, id_set):
-        if block.name == 's':
+    def parsed_parse(block, sentence, sentences, id_set):
+        if block.name == 's': # the only difference from the default parser - no id_set check
             sid = block.attributes['id']
             sentence = ' '.join(sentence)
             sentences[sid] = (sentence, block.attributes)
             sentence = []
         elif block.name == 'w':
-            s_parent = bp.tag_in_parents('s', block)
-            if s_parent:
+            s_parent = block.tag_in_parents('s')
+            if s_parent: # the only difference from the default parser - no id_set check
                 data = block.data.strip()
+                if preprocessing == 'parsed':
+                    data += get_annotations(block)
                 sentence.append(data)
         return sentence
 
-    def parsed_parse(bp, block, sentence, sentences, id_set):
-        s_parent = bp.tag_in_parents('s', block)
-        if block.name == 's':
-            sid = block.attributes['id']
-            sentence = ' '.join(sentence)
-            sentences[sid] = (sentence, block.attributes)
-            sentence = []
-        elif block.name == 'w':
-            s_parent = bp.tag_in_parents('s', block)
-            if s_parent:
-                data = block.data.strip()
-                data += get_annotations(block)
-                sentence.append(data)
-        return sentence
-
-    if preprocessing == 'xml':
-        return xml_parse
-    if preprocessing == 'parsed':
-        return parsed_parse
+    return parsed_parse
 
 class SentenceParser(SentenceParser):
 
