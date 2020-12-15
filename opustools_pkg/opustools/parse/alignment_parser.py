@@ -52,7 +52,7 @@ class AlignmentParser:
             attr=None, thres=None, leave_non_alignments_out=False):
         """Parse xces alignment files and output sentence ids."""
 
-        self.bp = BlockParser(alignment_file)
+        self.bp = BlockParser(alignment_file, data_tag='linkGrp')
         self.filters = []
 
         src_range, trg_range = src_trg_range
@@ -90,21 +90,17 @@ class AlignmentParser:
     def collect_links(self):
         """Collect links for a linkGrp"""
 
-        attrs = []
-        src_id_set, trg_id_set = set(), set()
-        src_doc, trg_doc = None, None
-
         try:
             for block in self.bp.get_complete_blocks():
-                if block.name == 'link':
-                    self.add_link(block, attrs, src_id_set, trg_id_set)
-                elif block.name == 'linkGrp':
-                    src_doc = block.attributes['fromDoc']
-                    trg_doc = block.attributes['toDoc']
-                    yield attrs, src_id_set, trg_id_set, src_doc, trg_doc
-                    attrs = []
-                    src_id_set, trg_id_set = set(), set()
-                    src_doc, trg_doc = None, None
+                attrs = []
+                src_id_set, trg_id_set = set(), set()
+                for child in block.children:
+                    if child.name == 'link':
+                        attrs, srd_id_set, trg_id_set = self.add_link(child, attrs, src_id_set, trg_id_set)
+                src_doc = block.attributes['fromDoc']
+                trg_doc = block.attributes['toDoc']
+                yield attrs, src_id_set, trg_id_set, src_doc, trg_doc
+
         except BlockParserError as e:
             raise AlignmentParserError(
                 'Error while parsing alignment file: {error}'.format(error=e.args[0]))

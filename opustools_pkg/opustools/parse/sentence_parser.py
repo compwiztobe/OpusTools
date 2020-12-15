@@ -13,22 +13,22 @@ class SentenceParserError(Exception):
 def parse_type(preprocess, preserve, get_annotations):
     """Select function to be used for parsing"""
     def parsed_preserve(blocks):
-        sentence = []
         for block in blocks:
-            if block.name == 's':
                 sid = block.attributes['id']
                 if preprocess == 'raw':
-                    sentence.append(block.data.strip())
-                sentence = ' '.join(sentence)
+                    sentence = block.data.strip()
+                else:
+                    words = []
+                    for child in block.children:
+                        if child.name == 'w':
+                            word = child.data.strip()
+                            if preprocess == 'parsed':
+                                word += get_annotations(child)
+                            words.append(word)
+                        elif child.name == 'time' and preserve:
+                            words.append(child.get_raw_tag())
+                    sentence = ' '.join(words)
                 yield (sid, (sentence, block.attributes))
-                sentence = []
-            elif block.name == 'w' and preprocess != 'raw':
-                data = block.data.strip()
-                if preprocess == 'parsed':
-                    data += get_annotations(block)
-                sentence.append(data)
-            elif block.name == 'time' and preserve:
-                sentence.append(block.get_raw_tag())
 
     return parsed_preserve
 
@@ -53,14 +53,12 @@ class SentenceParser:
 
         self.parse_blocks = parse_type(preprocessing, preserve, self.get_annotations)
 
-        self.data_tag = 's' if preprocessing == 'raw' else 'w'
-
     # removed store functionality in favor of a sentence iterator, possibly filtered by id_set
     # possibly with post-processing for the different annotations etc. (although that should probably go outside)
     # one thing that could maybe go in here the raw flag, to parse out individual words, or return entire sentence xml unparsed
     def sentences(self, id_set=None):
         """Read document and store sentences in a dictionary."""
-        bp = BlockParser(self.document, data_tag=self.data_tag)
+        bp = BlockParser(self.document, data_tag='s')
         try:
             for sid, attrs in self.parse_blocks(bp.get_complete_blocks()):
                 if not id_set or sid in id_set:

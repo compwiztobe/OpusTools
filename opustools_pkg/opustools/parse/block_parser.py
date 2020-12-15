@@ -13,12 +13,13 @@ class BlockParserError(Exception):
 
 class Block:
 
-    def __init__(self, parent=None, name=None, data='', attributes=None):
+    def __init__(self, parent=None, name=None, data='', attributes=None, children=[]):
         """Xml block instance held in memory by BlockParser"""
         self.parent = parent
         self.name = name
         self.data = data
         self.attributes = attributes
+        self.children = children
 
     def get_raw_tag(self):
         astrings = ['{k}="{v}"'.format(k=k, v=v)
@@ -28,26 +29,28 @@ class Block:
             return '<{tag_content} />'.format(
                     tag_content=tag_content, name=self.name)
         else:
-            return '<{tag_content}>{data}</{name}>'.format(
-                    tag_content=tag_content, data=self.data, name=self.name)
+            return '<{tag_content}>{data}{children}</{name}>'.format(
+                    tag_content=tag_content, data=self.data, name=self.name,
+                    children=''.join(child.get_raw_tag() for child in self.children))
 
     def __str__(self):
         parent_name = None
         if self.parent:
             parent_name = self.parent.name
         return ('name: {name}, data: {data}, attributes: {attributes}, '
-            'parent: {parent}'.format(name=self.name, data=repr(self.data),
-                attributes=self.attributes, parent=parent_name))
+            'parent: {parent}, children: [{children}]'.format(name=self.name, data=repr(self.data),
+                attributes=self.attributes, parent=parent_name,
+                children=', '.join(child.name for child in self.children)))
 
 class BlockParser:
 
-    def __init__(self, document, data_tag=None):
+    def __init__(self, document, data_tag='root'):
         """Parse an xml document line by line removing each element
         from memory as soon as its end tag is found.
 
         Positional arguments:
         document -- Xml document to be parsed
-        data_tag -- Tag for which char data is updated
+        data_tag -- Tag to yield from block iterator (complete tags parsed incrementally on demand)
         """
 
         self.document = document
@@ -61,21 +64,22 @@ class BlockParser:
             self.current_block = sub_block
 
         def end_element(name):
-            """Update complete blocks, and move up one level on block tree"""
-            self.completeBlocks.append(self.current_block)
+            """Update parent child list or return list, and move up one level on block tree"""
+            if name == self.data_tag:
+                self.completeBlocks.append(self.current_block)
+            else:
+                self.current_block.parent.children.append(self.current_block)
             self.current_block = self.current_block.parent
 
         def char_data(data):
             """Update current block's character data"""
-            if self.current_block.name == self.data_tag:
-                self.current_block.data += data
+            self.current_block.data += data
 
         self.p = xml.parsers.expat.ParserCreate()
 
         self.p.StartElementHandler = start_element
         self.p.EndElementHandler = end_element
-        if data_tag:
-            self.p.CharacterDataHandler = char_data
+        self.p.CharacterDataHandler = char_data
 
     def parse_line(self, line):
         try:
