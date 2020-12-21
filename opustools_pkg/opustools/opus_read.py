@@ -188,14 +188,18 @@ class OpusRead:
                 write_mode, self.switch_langs, check_filters, self.check_lang,
                 format_sentences)
 
-        self.of_handler = OpusFileHandler(
-                download_dir, source_zip, target_zip, directory, release,
-                preprocess, self.fromto, self.verbose, suppress_prompts)
-
-        self.alignment = self.of_handler.open_alignment_file(self.alignment)
-        self.alignmentParser = AlignmentParser(self.alignment,
-                (src_range, tgt_range), attribute, threshold,
-                leave_non_alignments_out)
+        self.download_dir = download_dir
+        self.source_zip = source_zip
+        self.target_zip = target_zip
+        self.directory = directory
+        self.release = release
+        self.preprocess = preprocess
+        self.suppress_prompts = suppress_prompts
+        self.src_range = src_range
+        self.tgt_range = tgt_range
+        self.attribute = attribute
+        self.threshold = threshold
+        self.leave_non_alignments_out = leave_non_alignments_out
 
     def printPairs(self):
 
@@ -209,62 +213,65 @@ class OpusRead:
 
         total = 0
         stop = False
-        for link_attrs, src_set, trg_set, src_doc_name, trg_doc_name in self.alignmentParser.collect_links():
-            if not src_doc_name:
-                break # might not be necessary with the for loop now
 
-            if self.skip_doc(src_doc_name):
-                continue
+        with OpusFileHandler(self.download_dir, self.source_zip, self.target_zip, self.directory, self.release,
+            self.preprocess, self.fromto, self.verbose, self.suppress_prompts) as of_handler:
+            with of_handler.open_alignment_file(self.alignment) as alignment:
+                alignmentParser = AlignmentParser(alignment,
+                        (self.src_range, self.tgt_range), self.attribute, self.threshold,
+                        self.leave_non_alignments_out)
 
-            if (self.write_mode != 'links' or
-                    (self.write_mode == 'links' and self.check_lang)):
-                try:
-                    src_doc = self.of_handler.open_sentence_file(src_doc_name, 'src')
-                    trg_doc = self.of_handler.open_sentence_file(trg_doc_name, 'trg')
-                except KeyError as e:
-                    print('\n'+e.args[0]+'\nContinuing from next sentence file pair.')
-                    continue
+                for link_attrs, src_set, trg_set, src_doc_name, trg_doc_name in alignmentParser.collect_links():
+                    if not src_doc_name:
+                        break # might not be necessary with the for loop now
 
-                try:
-                    src_parser = SentenceParser(src_doc,
-                            preprocessing=self.preprocess, anno_attrs=self.src_annot,
-                            preserve=self.preserve, delimiter=self.annot_delimiter)
-                    src_parser.sentences = {sid: attrs for sid, attrs in src_parser.sentences(src_set)}
-                    trg_parser = SentenceParser(trg_doc,
-                            preprocessing=self.preprocess, anno_attrs=self.trg_annot,
-                            preserve=self.preserve, delimiter=self.annot_delimiter)
-                    trg_parser.sentences = {sid: attrs for sid, attrs in trg_parser.sentences(trg_set)}
-                except SentenceParserError as e:
-                    print('\n'+e.message+'\nContinuing from next sentence file pair.')
-                    continue
+                    if self.skip_doc(src_doc_name):
+                        continue
 
-            self.add_doc_names(src_doc_name, trg_doc_name,
-                    self.resultfile, self.mosessrc, self.mosestrg)
+                    if (self.write_mode != 'links' or
+                            (self.write_mode == 'links' and self.check_lang)):
+                        try:
+                            with of_handler.open_sentence_file(src_doc_name, 'src') as src_doc, of_handler.open_sentence_file(trg_doc_name, 'trg') as trg_doc:
+                                src_parser = SentenceParser(src_doc,
+                                        preprocessing=self.preprocess, anno_attrs=self.src_annot,
+                                        preserve=self.preserve, delimiter=self.annot_delimiter)
+                                src_parser.sentences = {sid: attrs for sid, attrs in src_parser.sentences(src_set)}
+                                trg_parser = SentenceParser(trg_doc,
+                                        preprocessing=self.preprocess, anno_attrs=self.trg_annot,
+                                        preserve=self.preserve, delimiter=self.annot_delimiter)
+                                trg_parser.sentences = {sid: attrs for sid, attrs in trg_parser.sentences(trg_set)}
+                        except KeyError as e:
+                            print('\n'+e.args[0]+'\nContinuing from next sentence file pair.')
+                            continue
+                        except SentenceParserError as e:
+                            print('\n'+e.message+'\nContinuing from next sentence file pair.')
+                            continue
 
-            for link_a in link_attrs:
-                src_result, trg_result = self.format_pair(
-                        link_a, src_parser, trg_parser, self.fromto)
+                    self.add_doc_names(src_doc_name, trg_doc_name,
+                            self.resultfile, self.mosessrc, self.mosestrg)
 
-                if src_result == -1:
-                    continue
+                    for link_a in link_attrs:
+                        src_result, trg_result = self.format_pair(
+                                link_a, src_parser, trg_parser, self.fromto)
 
-                self.out_put_pair(src_result, trg_result, self.resultfile,
-                        self.mosessrc, self.mosestrg, link_a, self.id_file,
-                        src_doc_name, trg_doc_name)
+                        if src_result == -1:
+                            continue
 
-                total +=1
-                if total == self.maximum:
-                    stop = True
-                    break
+                        self.out_put_pair(src_result, trg_result, self.resultfile,
+                                self.mosessrc, self.mosestrg, link_a, self.id_file,
+                                src_doc_name, trg_doc_name)
 
-            self.add_doc_ending(self.resultfile)
+                        total +=1
+                        if total == self.maximum:
+                            stop = True
+                            break
 
-            if stop:
-                break
+                    self.add_doc_ending(self.resultfile)
 
-        self.add_file_ending(self.resultfile)
+                    if stop:
+                        break
 
-        self.alignmentParser.bp.close_document()
+                self.add_file_ending(self.resultfile)
 
         if self.write:
             if self.write_mode == 'moses' and self.mosessrc:
@@ -276,10 +283,5 @@ class OpusRead:
         if self.write_ids:
             self.id_file.close()
 
-        self.of_handler.close_zipfiles()
-
         if self.verbose:
             print('Done')
-
-
-

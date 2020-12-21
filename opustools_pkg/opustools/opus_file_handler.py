@@ -154,3 +154,9 @@ class OpusFileHandler:
             self.src_zip.close()
             self.trg_zip.close()
 
+    def __enter__(self):
+        # self.open_zipfiles()
+        return self
+
+    def __exit__(self, *exc):
+        self.close_zipfiles()

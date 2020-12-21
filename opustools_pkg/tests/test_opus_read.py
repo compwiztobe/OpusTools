@@ -608,10 +608,10 @@ class TestOpusRead(unittest.TestCase):
             maximum=1, write_mode='tmx', root_directory=self.root_directory,
             verbose=True)
         self.assertEqual(var,
-            'Reading alignment file "'+self.root_directory+'/RF/latest/xml/en-sv.xml.gz"\n'
             '<?xml version="1.0" encoding="utf-8"?>\n<tmx version="1.4.">'
             '\n<header srclang="en"\n\tadminlang="en"\n\tsegtype='
             '"sentence"\n\tdatatype="PlainText" />\n\t<body>\n'
+            'Reading alignment file "'+self.root_directory+'/RF/latest/xml/en-sv.xml.gz"\n'
             'Opening zip archive "'+self.root_directory+'/RF/latest/xml/en.zip" ... Done\n'
             'Opening zip archive "'+self.root_directory+'/RF/latest/xml/sv.zip" ... Done\n'
             'Reading src_file "RF/xml/en/1988.xml"\n'
