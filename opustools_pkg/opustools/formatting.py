@@ -339,7 +339,7 @@ def check_lang_conf_type(lang_filters):
 
 def unzip(sentence_dict, sids):
     if sids:
-        sentences, attrs = zip(*(sentence_dict[sid] for sid in sids))
+        sentences, attrs = zip(*(sentence_dict.get(sid, ('', {})) for sid in sids))
         return sentences, attrs
     else:
         return [],[]
