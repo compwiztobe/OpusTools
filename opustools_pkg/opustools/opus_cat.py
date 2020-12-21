@@ -83,6 +83,7 @@ class OpusCat:
                 return zipfile.ZipFile(self.localfile)
             except FileNotFoundError:
                 print('No file found')
+                raise OpusFileNotFoundError('')
 
     def printFile(self, f):
         """Print sentences from a document."""
@@ -130,5 +131,5 @@ class OpusCat:
                             with z.open(name, 'r') as f:
                                 #yield from
                                 self.printFile(f)
-        except AttributeError:
+        except OpusFileNotFoundError:
             print('Necessary files not found.')
